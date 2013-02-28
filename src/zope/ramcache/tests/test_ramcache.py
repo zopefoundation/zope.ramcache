@@ -19,12 +19,12 @@ from unittest import TestCase, TestSuite, main, makeSuite
 from zope.interface.verify import verifyClass, verifyObject
 from zope.testing.cleanup import CleanUp
 
+from zope.ramcache._compat import dumps
 from zope.ramcache.ram import RAMCache
 from zope.ramcache.ram import Storage
 from zope.ramcache.tests.test_icache import BaseICacheTest
 from zope.ramcache.interfaces import ICache
 from zope.ramcache.interfaces.ram import IRAMCache
-
 
 class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
 
@@ -183,7 +183,7 @@ class TestStorage(TestCase):
         s._data = {object: {key: [value, timestamp, 1]}}
         self.assertEqual(s.getEntry(object, key), value, 'got wrong value')
 
-        self.assert_(s._data[object][key][2] == 2, 'access count not updated')
+        self.assertTrue(s._data[object][key][2] == 2, 'access count not updated')
 
         # See if _misses are updated
         try:
@@ -196,7 +196,7 @@ class TestStorage(TestCase):
         self.assertEqual(s._misses[object], 1)
 
         object2 = "second"
-        self.assert_(not s._misses.has_key(object2))
+        self.assertTrue(object2 not in s._misses)
         try:
             s.getEntry(object2, "Nonexistent")
         except KeyError:
@@ -354,10 +354,8 @@ class TestStorage(TestCase):
         s._data = {object:  {key: [value, ts, 0],
                              key2: [value, ts, 0]},
                    object2: {key: [value, ts, 0]}}
-        keys = s.getKeys(object)
-        expected = [key, key2]
-        keys.sort()
-        expected.sort()
+        keys = sorted(s.getKeys(object))
+        expected = sorted([key, key2])
         self.assertEqual(keys, expected, 'bad keys')
 
     def test_removeStale(self):
@@ -384,7 +382,7 @@ class TestStorage(TestCase):
         s = Storage(maxAge=100)
         s.writelock.acquire()
         try:
-            self.assert_(s.writelock.locked(), "locks don't work")
+            self.assertTrue(s.writelock.locked(), "locks don't work")
         finally:
             s.writelock.release()
 
@@ -450,7 +448,6 @@ class TestStorage(TestCase):
         self.assertEqual(s._misses, clearMisses, "misses counter not cleared")
 
     def test_getStatistics(self):
-        from cPickle import dumps
         s = Storage(maxEntries=3)
         object = 'object'
         object2 = 'object2'

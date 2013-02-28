@@ -17,14 +17,13 @@ __docformat__ = 'restructuredtext'
 
 from time import time
 from threading import Lock
-from cPickle import dumps
 
 from persistent import Persistent
 from zope.interface import implementer
 from zope.location.interfaces import IContained
 
 from zope.ramcache.interfaces.ram import IRAMCache
-
+from zope.ramcache._compat import dumps
 
 # A global caches dictionary shared between threads
 caches = {}
@@ -130,8 +129,7 @@ class RAMCache(Persistent):
     def _buildKey(kw):
         """Build a tuple which can be used as an index for a cached value"""
         if kw:
-            items = kw.items()
-            items.sort()
+            items = sorted(kw.items())
             return tuple(items)
         return ()
 
@@ -259,8 +257,8 @@ class Storage(object):
             self.writelock.acquire()
             try:
                 data = self._data
-                for object, dict in data.items():
-                    for key in dict.keys():
+                for object, dict in tuple(data.items()):
+                    for key in tuple(dict.keys()):
                         if dict[key][1] < punchline:
                             del dict[key]
                             if not dict:
@@ -279,7 +277,7 @@ class Storage(object):
         self.writelock.acquire()
         try:
             data = self._data
-            keys = [(ob, k) for ob, v in data.iteritems() for k in v]
+            keys = [(ob, k) for ob, v in data.items() for k in v]
 
             if len(keys) > self.maxEntries:
                 def getKey(item):
@@ -304,8 +302,8 @@ class Storage(object):
             self._invalidate_queued()
 
     def _clearAccessCounters(self):
-        for dict in self._data.itervalues():
-            for val in dict.itervalues():
+        for dict in self._data.values():
+            for val in dict.values():
                 val[2] = 0
         for k in self._misses:
             self._misses[k] = 0
@@ -314,13 +312,12 @@ class Storage(object):
         return self._data[object].keys()
 
     def getStatistics(self):
-        objects = self._data.keys()
-        objects.sort()
+        objects = sorted(self._data.keys())
         result = []
 
         for ob in objects:
             size = len(dumps(self._data[ob]))
-            hits = sum(entry[2] for entry in self._data[ob].itervalues())
+            hits = sum(entry[2] for entry in self._data[ob].values())
             result.append({'path': ob,
                            'hits': hits,
                            'misses': self._misses.get(ob, 0),
