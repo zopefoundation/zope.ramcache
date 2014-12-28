@@ -34,19 +34,21 @@ class BaseICacheTest(object):
         ob = "obj"
         data = "data"
         marker = []
-        self.failIf(cache.query(ob, None, default=marker) is not marker,
+        self.assertFalse(cache.query(ob, None, default=marker) is not marker,
                     "empty cache should not contain anything")
 
         cache.set(data, ob, key={'id': 35})
-        self.assertEquals(cache.query(ob, {'id': 35}), data,
+        self.assertEqual(cache.query(ob, {'id': 35}), data,
                     "should return cached result")
-        self.failIf(cache.query(ob, {'id': 33}, default=marker) is not marker,
+        self.assertFalse(cache.query(ob, {'id': 33}, default=marker)
+                            is not marker,
                     "should not return cached result for a different key")
 
         cache.invalidate(ob, {"id": 33})
-        self.assertEquals(cache.query(ob, {'id': 35}), data,
+        self.assertEqual(cache.query(ob, {'id': 35}), data,
                           "should return cached result")
-        self.failIf(cache.query(ob, {'id': 33}, default=marker) is not marker,
+        self.assertFalse(cache.query(ob, {'id': 33}, default=marker)
+                            is not marker,
                     "should not return cached result after invalidate")
 
     def testInvalidateAll(self):
@@ -58,11 +60,13 @@ class BaseICacheTest(object):
         cache.set("data3", ob2, key={'foo': 2})
         cache.invalidateAll()
         marker = []
-        self.failIf(cache.query(ob1, default=marker) is not marker,
+        self.assertFalse(cache.query(ob1, default=marker) is not marker,
                     "should not return cached result after invalidateAll")
-        self.failIf(cache.query(ob2, {'foo': 1}, default=marker) is not marker,
+        self.assertFalse(cache.query(ob2, {'foo': 1}, default=marker)
+                            is not marker,
                     "should not return cached result after invalidateAll")
-        self.failIf(cache.query(ob2, {'foo': 2}, default=marker) is not marker,
+        self.assertFalse(cache.query(ob2, {'foo': 2}, default=marker)
+                            is not marker,
                     "should not return cached result after invalidateAll")
 
 

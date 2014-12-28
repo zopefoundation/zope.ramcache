@@ -38,7 +38,7 @@ class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
     def test_init(self):
         c1 = RAMCache()._cacheId
         c2 = RAMCache()._cacheId
-        self.assertNotEquals(c1, c2, "The cacheId is not unique")
+        self.assertNotEqual(c1, c2, "The cacheId is not unique")
 
     def test_getStatistics(self):
         c = RAMCache()
@@ -66,7 +66,7 @@ class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
         sleep(2)
         c.set(42, "object", key={'foo': 'bar'})
         # last cleanup should now be updated
-        self.failUnless(lastCleanup < c._getStorage().lastCleanup)
+        self.assertTrue(lastCleanup < c._getStorage().lastCleanup)
 
     def test_cache(self):
         from zope.ramcache import ram
@@ -230,7 +230,7 @@ class TestStorage(TestCase):
         t2 = time()
 
         timestamp = s._data[object][key][1]
-        self.failUnless(t1 <= timestamp <= t2, 'wrong timestamp')
+        self.assertTrue(t1 <= timestamp <= t2, 'wrong timestamp')
 
         self.assertEqual(s._data, {object: {key: [value, timestamp, 0]}},
                          'stored data incorrectly')
@@ -490,7 +490,7 @@ class TestModule(TestCase):
         from zope.ramcache.ram import writelock
         writelock.acquire()
         try:
-            self.failUnless(writelock.locked(), "locks don't work")
+            self.assertTrue(writelock.locked(), "locks don't work")
         finally:
             writelock.release()
 
