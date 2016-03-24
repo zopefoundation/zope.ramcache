@@ -36,7 +36,7 @@ def alltests():
     return unittest.TestSuite(suites)
 
 setup(name = 'zope.ramcache',
-      version='2.1.1.dev0',
+      version='2.2.0.dev0',
       author='Zope Foundation and Contributors',
       author_email='zope-dev@zope.org',
       description='Zope RAM Cache',
@@ -53,7 +53,6 @@ setup(name = 'zope.ramcache',
           'License :: OSI Approved :: Zope Public License',
           'Programming Language :: Python',
           'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.3',
