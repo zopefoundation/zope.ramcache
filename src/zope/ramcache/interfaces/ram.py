@@ -34,9 +34,16 @@ class IRAMCache(ICache):
         """Reports on the contents of a cache.
 
         The returned value is a sequence of dictionaries with the
-        following keys:
+        following (string) keys:
 
-          `path`, `hits`, `misses`, `size`, `entries`
+          - ``path``: The object being cached.
+          - ``hits``: How many times this path (for all its keys)
+            has been looked up.
+          - ``misses``: How many misses there have been for this path
+            and all its keys.
+          - ``size``: An integer approximating the RAM usage for this path
+            (only available if all values can be pickled; otherwise ``False``)
+          - ``entries``: How many total keys there are for this path.
         """
 
     def update(maxEntries, maxAge, cleanupInterval):
