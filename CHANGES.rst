@@ -17,6 +17,9 @@
   statistics. Instead, return ``False`` for the size if such a value
   is found. Fixes `issue 1 <https://github.com/zopefoundation/zope.ramcache/issues/1>`_.
 
+- Change the internal storage format of the RAM cache to require less
+  memory and be easier to maintain.
+
 2.1.0 (2014-12-29)
 ==================
 
