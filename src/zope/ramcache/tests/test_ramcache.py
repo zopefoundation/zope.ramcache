@@ -13,8 +13,9 @@
 ##############################################################################
 """Unit tests for RAM Cache.
 """
+import unittest
 from time import time
-from unittest import TestCase, TestSuite, main, makeSuite
+
 
 from zope.interface.verify import verifyClass, verifyObject
 from zope.testing.cleanup import CleanUp
@@ -26,7 +27,10 @@ from zope.ramcache.tests.test_icache import BaseICacheTest
 from zope.ramcache.interfaces import ICache
 from zope.ramcache.interfaces.ram import IRAMCache
 
-class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
+
+class TestRAMCache(CleanUp,
+                   BaseICacheTest,
+                   unittest.TestCase):
 
     def _Test__new(self):
         return RAMCache()
@@ -93,19 +97,18 @@ class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
                          "cleanupInterval not set (expected 42, got %s)"
                          % storage1.cleanupInterval)
 
-        # Simulate persisting and restoring the RamCache which removes
+        # Persist and restore the RamCache which removes
         # all _v_ attributes.
-        for k in c.__dict__.keys():
-            if k.startswith('_v_'):
-                del c.__dict__[k]
-        storage2 = c._getStorage()
+        from pickle import loads
+        c2 = loads(dumps(c))
+        storage2 = c2._getStorage()
         self.assertEqual(storage1, storage2,
                          "_getStorage returns different storages")
 
     def test_buildKey(self):
         kw = {'foo': 1, 'bar': 2, 'baz': 3}
         key = RAMCache._buildKey(kw)
-        self.assertEqual(key, (('bar',2), ('baz',3), ('foo',1)), "wrong key")
+        self.assertEqual(key, (('bar', 2), ('baz', 3), ('foo', 1)))
 
     def test_query(self):
         ob = ('aaa',)
@@ -171,7 +174,7 @@ class TestRAMCache(CleanUp, TestCase, BaseICacheTest):
         c.invalidate(('yadda',))
 
 
-class TestStorage(TestCase):
+class TestStorage(unittest.TestCase):
 
     def test_getEntry(self):
         s = Storage()
@@ -183,40 +186,34 @@ class TestStorage(TestCase):
         s._data = {object: {key: [value, timestamp, 1]}}
         self.assertEqual(s.getEntry(object, key), value, 'got wrong value')
 
-        self.assertTrue(s._data[object][key][2] == 2, 'access count not updated')
+        self.assertEqual(s._data[object][key][2], 2,
+                         'access count not updated')
 
         # See if _misses are updated
-        try:
+        with self.assertRaises(KeyError):
             s.getEntry(object, "Nonexistent")
-        except KeyError:
-            pass
-        else:
-            raise Exception("ExpectedKeyError")
 
         self.assertEqual(s._misses[object], 1)
 
         object2 = "second"
-        self.assertTrue(object2 not in s._misses)
-        try:
+        self.assertNotIn(object2, s._misses)
+
+        with self.assertRaises(KeyError):
             s.getEntry(object2, "Nonexistent")
-        except KeyError:
-            pass
-        else:
-            raise Exception("ExpectedKeyError")
         self.assertEqual(s._misses[object2], 1)
 
     def test_getEntry_do_cleanup(self):
-         s = Storage(cleanupInterval=300, maxAge=300)
-         object = 'object'
-         key = ('view', (), ('answer', 42))
-         value = 'yes'
+        s = Storage(cleanupInterval=300, maxAge=300)
+        object = 'object'
+        key = ('view', (), ('answer', 42))
+        value = 'yes'
 
-         s.setEntry(object, key, value)
+        s.setEntry(object, key, value)
 
-         s._data[object][key][1] = time() - 400
-         s.lastCleanup = time() - 400
+        s._data[object][key][1] = time() - 400
+        s.lastCleanup = time() - 400
 
-         self.assertRaises(KeyError, s.getEntry, object, key)
+        self.assertRaises(KeyError, s.getEntry, object, key)
 
     def test_setEntry(self):
         s = Storage(cleanupInterval=300, maxAge=300)
@@ -315,10 +312,12 @@ class TestStorage(TestCase):
         key2 = ('view2', (), ('answer', 42))
         value = 'yes'
         ts = time()
-        s._data = {object:  {key: [value, ts, 0],
-                             key2: [value, ts, 0]},
-                   object2: {key: [value, ts, 0]},
-                   object3: "foo" }
+        s._data = {
+            object: {key: [value, ts, 0],
+                     key2: [value, ts, 0]},
+            object2: {key: [value, ts, 0]},
+            object3: "foo"
+        }
         s._invalidate_queue = [(object2, None), (object3, None)]
         s._invalidate_queued()
         self.assertEqual(s._data,
@@ -342,6 +341,15 @@ class TestStorage(TestCase):
         self.assertEqual(s._data, {}, "not invalidated")
         self.assertEqual(s._misses, {}, "miss counters not reset")
         self.assertEqual(s._invalidate_queue, [], "invalidate queue not empty")
+
+    def test_invalidate_removes_empty(self):
+        s = Storage()
+        ob = object()
+        key = 'key'
+        data = {ob: {key: 1}}
+        s._data = data
+        s._do_invalidate(ob, key)
+        self.assertEqual(s._data, {})
 
     def test_getKeys(self):
         s = Storage()
@@ -380,11 +388,8 @@ class TestStorage(TestCase):
 
     def test_locking(self):
         s = Storage(maxAge=100)
-        s.writelock.acquire()
-        try:
+        with s.writelock:
             self.assertTrue(s.writelock.locked(), "locks don't work")
-        finally:
-            s.writelock.release()
 
     def test_removeLeastAccessed(self):
         s = Storage(maxEntries=3)
@@ -426,7 +431,6 @@ class TestStorage(TestCase):
         key2 = ('view2', (), ('answer', 42))
         key3 = ('view3', (), ('answer', 42))
         value = 'yes'
-        timestamp = time()
         s._data = {object:  {key1: [value, 1, 10],
                              key2: [value, 2, 5],
                              key3: [value, 3, 2]},
@@ -455,7 +459,6 @@ class TestStorage(TestCase):
         key2 = ('view2', (), ('answer', 42))
         key3 = ('view3', (), ('answer', 42))
         value = 'yes'
-        timestamp = time()
         s._data = {object:  {key1: [value, 1, 10],
                              key2: [value, 2, 5],
                              key3: [value, 3, 2]},
@@ -466,44 +469,30 @@ class TestStorage(TestCase):
         len1 = len(dumps(s._data[object]))
         len2 = len(dumps(s._data[object2]))
 
-        expected = ({'path': object,
-                     'hits': 17,
-                     'misses': 11,
-                     'size': len1,
-                     'entries': 3
-                     },
-                    {'path': object2,
-                     'hits': 4,
-                     'misses': 42,
-                     'size': len2,
-                     'entries': 3
-                     },
-                    )
+        expected = (
+            {
+                'path': object,
+                'hits': 17,
+                'misses': 11,
+                'size': len1,
+                'entries': 3
+            },
+            {
+                'path': object2,
+                'hits': 4,
+                'misses': 42,
+                'size': len2,
+                'entries': 3
+            },
+        )
 
         result = s.getStatistics()
         self.assertEqual(result, expected)
 
 
-class TestModule(TestCase):
+class TestModule(unittest.TestCase):
 
     def test_locking(self):
         from zope.ramcache.ram import writelock
-        writelock.acquire()
-        try:
+        with writelock:
             self.assertTrue(writelock.locked(), "locks don't work")
-        finally:
-            writelock.release()
-
-
-class Test(TestCase):
-    pass
-
-def test_suite():
-    return TestSuite((
-        makeSuite(TestRAMCache),
-        makeSuite(TestStorage),
-        makeSuite(TestModule),
-        ))
-
-if __name__=='__main__':
-    main(defaultTest='test_suite')
