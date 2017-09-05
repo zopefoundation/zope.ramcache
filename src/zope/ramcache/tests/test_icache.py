@@ -13,16 +13,19 @@
 ##############################################################################
 """Unit tests for ICache interface
 """
-from unittest import TestSuite, main
+import unittest
 from zope.interface.verify import verifyObject
 
 from zope.ramcache.interfaces import ICache
 
 
-class BaseICacheTest(object):
+class BaseICacheTest(unittest.TestCase):
     """Base class for ICache unit tests.  Subclasses should provide a
     _Test__new() method that returns a new empty cache object.
     """
+
+    def _Test__new(self):
+        raise unittest.SkipTest("Subclass must define")
 
     def testVerifyICache(self):
         # Verify that the object implements ICache
@@ -34,22 +37,22 @@ class BaseICacheTest(object):
         ob = "obj"
         data = "data"
         marker = []
-        self.assertFalse(cache.query(ob, None, default=marker) is not marker,
-                    "empty cache should not contain anything")
+        self.assertIs(cache.query(ob, None, default=marker), marker,
+                      "empty cache should not contain anything")
 
         cache.set(data, ob, key={'id': 35})
         self.assertEqual(cache.query(ob, {'id': 35}), data,
-                    "should return cached result")
-        self.assertFalse(cache.query(ob, {'id': 33}, default=marker)
-                            is not marker,
-                    "should not return cached result for a different key")
+                         "should return cached result")
+        self.assertIs(cache.query(ob, {'id': 33}, default=marker),
+                      marker,
+                      "should not return cached result for a different key")
 
         cache.invalidate(ob, {"id": 33})
         self.assertEqual(cache.query(ob, {'id': 35}), data,
-                          "should return cached result")
-        self.assertFalse(cache.query(ob, {'id': 33}, default=marker)
-                            is not marker,
-                    "should not return cached result after invalidate")
+                         "should return cached result")
+        self.assertIs(cache.query(ob, {'id': 33}, default=marker),
+                      marker,
+                      "should not return cached result after invalidate")
 
     def testInvalidateAll(self):
         cache = self._Test__new()
@@ -60,19 +63,11 @@ class BaseICacheTest(object):
         cache.set("data3", ob2, key={'foo': 2})
         cache.invalidateAll()
         marker = []
-        self.assertFalse(cache.query(ob1, default=marker) is not marker,
-                    "should not return cached result after invalidateAll")
-        self.assertFalse(cache.query(ob2, {'foo': 1}, default=marker)
-                            is not marker,
-                    "should not return cached result after invalidateAll")
-        self.assertFalse(cache.query(ob2, {'foo': 2}, default=marker)
-                            is not marker,
-                    "should not return cached result after invalidateAll")
-
-
-def test_suite():
-    return TestSuite((
-        ))
-
-if __name__=='__main__':
-    main(defaultTest='test_suite')
+        self.assertIs(cache.query(ob1, default=marker), marker,
+                      "should not return cached result after invalidateAll")
+        self.assertIs(cache.query(ob2, {'foo': 1}, default=marker),
+                      marker,
+                      "should not return cached result after invalidateAll")
+        self.assertIs(cache.query(ob2, {'foo': 2}, default=marker),
+                      marker,
+                      "should not return cached result after invalidateAll")

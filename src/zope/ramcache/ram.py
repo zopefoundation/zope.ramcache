@@ -15,6 +15,7 @@
 """
 __docformat__ = 'restructuredtext'
 
+from contextlib import contextmanager
 from time import time
 from threading import Lock
 
@@ -60,13 +61,10 @@ class RAMCache(Persistent):
         # the counter, we need to make it persistent, because the
         # RAMCaches are persistent.
 
-        cache_id_writelock.acquire()
-        try:
+        with cache_id_writelock:
             global cache_id_counter
-            cache_id_counter +=1
+            cache_id_counter += 1
             self._cacheId = "%s_%f_%d" % (id(self), time(), cache_id_counter)
-        finally:
-            cache_id_writelock.release()
 
         self.requestVars = ()
         self.maxEntries = 1000
@@ -77,7 +75,7 @@ class RAMCache(Persistent):
         s = self._getStorage()
         return s.getStatistics()
 
-    def update(self,  maxEntries=None, maxAge=None, cleanupInterval=None):
+    def update(self, maxEntries=None, maxAge=None, cleanupInterval=None):
         if maxEntries is not None:
             self.maxEntries = maxEntries
 
@@ -92,7 +90,7 @@ class RAMCache(Persistent):
     def invalidate(self, ob, key=None):
         s = self._getStorage()
         if key:
-            key =  self._buildKey(key)
+            key = self._buildKey(key)
             s.invalidate(ob, key)
         else:
             s.invalidate(ob)
@@ -117,23 +115,19 @@ class RAMCache(Persistent):
     def _getStorage(self):
         """Finds or creates a storage object."""
         cacheId = self._cacheId
-        writelock.acquire()
-        try:
+        with writelock:
             if cacheId not in caches:
                 caches[cacheId] = Storage(self.maxEntries, self.maxAge,
                                           self.cleanupInterval)
             return caches[cacheId]
-        finally:
-            writelock.release()
 
+    @staticmethod
     def _buildKey(kw):
         """Build a tuple which can be used as an index for a cached value"""
         if kw:
             items = sorted(kw.items())
             return tuple(items)
         return ()
-
-    _buildKey = staticmethod(_buildKey)
 
 
 class Storage(object):
@@ -189,17 +183,13 @@ class Storage(object):
         if self.lastCleanup <= time() - self.cleanupInterval:
             self.cleanup()
 
-        self.writelock.acquire()
-        try:
+        with self._invalidate_queued_after_writelock():
             if ob not in self._data:
                 self._data[ob] = {}
 
             timestamp = time()
             # [data, ctime, access count]
             self._data[ob][key] = [value, timestamp, 0]
-        finally:
-            self.writelock.release()
-            self._invalidate_queued()
 
     def _do_invalidate(self, ob, key=None):
         """This does the actual invalidation, but does not handle the locking.
@@ -217,9 +207,19 @@ class Storage(object):
         except KeyError:
             pass
 
-    def _invalidate_queued(self):
-        """This method should be called after each writelock release."""
+    @contextmanager
+    def _invalidate_queued_after_writelock(self):
+        """
+        A context manager that obtains the writelock for the body, and
+        then, after it is released, invalidates the queue.
+        """
+        try:
+            with self.writelock:
+                yield
+        finally:
+            self._invalidate_queued()
 
+    def _invalidate_queued(self):
         while self._invalidate_queue:
             obj, key = self._invalidate_queue.pop()
             self.invalidate(obj, key)
@@ -241,21 +241,18 @@ class Storage(object):
     def invalidateAll(self):
         """Drop all the cached values.
         """
-        self.writelock.acquire()
-        try:
+        with self.writelock:
             self._data = {}
             self._misses = {}
             self._invalidate_queue = []
-        finally:
-            self.writelock.release()
 
     def removeStaleEntries(self):
         """Remove the entries older than `maxAge`"""
 
         if self.maxAge > 0:
             punchline = time() - self.maxAge
-            self.writelock.acquire()
-            try:
+
+            with self._invalidate_queued_after_writelock():
                 data = self._data
                 for object, dict in tuple(data.items()):
                     for key in tuple(dict.keys()):
@@ -263,9 +260,6 @@ class Storage(object):
                             del dict[key]
                             if not dict:
                                 del data[object]
-            finally:
-                self.writelock.release()
-                self._invalidate_queued()
 
     def cleanup(self):
         """Cleanup the data"""
@@ -274,8 +268,7 @@ class Storage(object):
         self.lastCleanup = time()
 
     def removeLeastAccessed(self):
-        self.writelock.acquire()
-        try:
+        with self._invalidate_queued_after_writelock():
             data = self._data
             keys = [(ob, k) for ob, v in data.items() for k in v]
 
@@ -297,9 +290,6 @@ class Storage(object):
                             del data[ob]
 
                 self._clearAccessCounters()
-        finally:
-            self.writelock.release()
-            self._invalidate_queued()
 
     def _clearAccessCounters(self):
         for dict in self._data.values():

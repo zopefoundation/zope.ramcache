@@ -1,16 +1,20 @@
-Changes
-=======
+=========
+ Changes
+=========
 
 2.2.0 (unreleased)
-------------------
+==================
 
-- Add support for Python 3.5.
+- Add support for Python 3.5 and 3.6.
 
-- Drop support for Python 2.6.
+- Drop support for Python 2.6 and 3.3.
 
+- Drop support for ``python setup.py test``.
+
+- Test PyPy3 on Travis CI.
 
 2.1.0 (2014-12-29)
-------------------
+==================
 
 - Added support for PyPy.  (PyPy3 is pending release of a fix for:
   https://bitbucket.org/pypy/pypy/issue/1946)
@@ -21,7 +25,7 @@ Changes
 
 
 2.0.0 (2013-02-28)
-------------------
+==================
 
 - Add support for Python 3.3.
 
@@ -33,7 +37,6 @@ Changes
 - Remove outdated classifier / keywords.
 
 1.0 (2009-07-23)
-----------------
+================
 
 - Broke out the ram cache functionality from ``zope.app.cache``.
-
