@@ -19,6 +19,9 @@ from contextlib import contextmanager
 from time import time
 from threading import Lock
 
+from six import iteritems
+from six import itervalues
+
 from persistent import Persistent
 from zope.interface import implementer
 from zope.location.interfaces import IContained
@@ -254,12 +257,12 @@ class Storage(object):
 
             with self._invalidate_queued_after_writelock():
                 data = self._data
-                for object, dict in tuple(data.items()):
-                    for key in tuple(dict.keys()):
-                        if dict[key][1] < punchline:
-                            del dict[key]
-                            if not dict:
-                                del data[object]
+                for path, path_data in tuple(iteritems(data)): # copy, we modify
+                    for key, val in tuple(iteritems(path_data)): # likewise
+                        if val[1] < punchline:
+                            del path_data[key]
+                            if not path_data:
+                                del data[path]
 
     def cleanup(self):
         """Cleanup the data"""
@@ -270,7 +273,7 @@ class Storage(object):
     def removeLeastAccessed(self):
         with self._invalidate_queued_after_writelock():
             data = self._data
-            keys = [(ob, k) for ob, v in data.items() for k in v]
+            keys = [(ob, k) for ob, v in iteritems(data) for k in v]
 
             if len(keys) > self.maxEntries:
                 def getKey(item):
@@ -292,25 +295,31 @@ class Storage(object):
                 self._clearAccessCounters()
 
     def _clearAccessCounters(self):
-        for dict in self._data.values():
-            for val in dict.values():
+        for path_data in itervalues(self._data):
+            for val in itervalues(path_data):
                 val[2] = 0
-        for k in self._misses:
-            self._misses[k] = 0
+        self._misses = {}
 
     def getKeys(self, object):
         return self._data[object].keys()
 
     def getStatistics(self):
-        objects = sorted(self._data.keys())
+        objects = sorted(iteritems(self._data))
         result = []
 
-        for ob in objects:
-            size = len(dumps(self._data[ob]))
-            hits = sum(entry[2] for entry in self._data[ob].values())
-            result.append({'path': ob,
+        for path, path_data in objects:
+            try:
+                size = len(dumps(path_data))
+            except Exception:
+                # Some value couldn't be pickled properly.
+                # That's OK, they shouldn't have to be. Return
+                # a distinct value that can be recognized as such,
+                # but that also works in arithmetic.
+                size = False
+            hits = sum(entry[2] for entry in itervalues(path_data))
+            result.append({'path': path,
                            'hits': hits,
-                           'misses': self._misses.get(ob, 0),
+                           'misses': self._misses.get(path, 0),
                            'size': size,
-                           'entries': len(self._data[ob])})
+                           'entries': len(path_data)})
         return tuple(result)

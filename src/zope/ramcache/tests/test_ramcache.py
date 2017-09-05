@@ -54,6 +54,23 @@ class TestRAMCache(CleanUp,
         r2 = c.getStatistics()
         self.assertEqual(r1, r2, "see Storage.getStatistics() tests")
 
+    def test_getStatistics_non_pickle(self):
+        # https://github.com/zopefoundation/zope.ramcache/issues/1
+        class NoPickle(object):
+            def __getstate__(self):
+                raise RuntimeError()
+
+        c = RAMCache()
+        c.set(NoPickle(), "path")
+        stats = c.getStatistics()
+        self.assertEqual(stats,
+                         ({'entries': 1,
+                           'hits': 0,
+                           'misses': 0,
+                           'path': 'path',
+                           'size': False},))
+        self.assertEqual(stats[0]['size'] + 1, 1)
+
     def test_update(self):
         c = RAMCache()
         c.update(1, 2, 3)
@@ -445,7 +462,7 @@ class TestStorage(unittest.TestCase):
                    object2: {key1: [value, 4, 0],
                              key2: [value, 5, 0],
                              key3: [value, 6, 0]}}
-        clearMisses = {object: 0, object2: 0}
+        clearMisses = {}
 
         s._clearAccessCounters()
         self.assertEqual(s._data, cleared, "access counters not cleared")

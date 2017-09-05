@@ -13,6 +13,10 @@
 
 - Test PyPy3 on Travis CI.
 
+- Stop requiring all values to support pickling in order to get
+  statistics. Instead, return ``False`` for the size if such a value
+  is found. Fixes `issue 1 <https://github.com/zopefoundation/zope.ramcache/issues/1>`_.
+
 2.1.0 (2014-12-29)
 ==================
 
