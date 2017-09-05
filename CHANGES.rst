@@ -11,6 +11,8 @@
 
 - Drop support for ``python setup.py test``.
 
+- Test PyPy3 on Travis CI.
+
 2.1.0 (2014-12-29)
 ==================
 
