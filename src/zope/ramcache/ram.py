@@ -132,6 +132,23 @@ class RAMCache(Persistent):
             return tuple(items)
         return ()
 
+class _StorageData(object):
+    __slots__ = ('value', 'ctime', 'access_count')
+
+    def __init__(self, value):
+        self.value = value
+        self.ctime = time()
+        self.access_count = 0
+
+    def __eq__(self, other):
+        # For tests
+        return (self.value == other.value
+                and self.ctime == other.ctime
+                and self.access_count == other.access_count)
+
+    def __getstate__(self):
+        # For getStatistics only.
+        return self.value
 
 class Storage(object):
     """Storage keeps the count and does the aging and cleanup of cached
@@ -175,8 +192,8 @@ class Storage(object):
             self._misses[ob] += 1
             raise
         else:
-            data[2] += 1                    # increment access count
-            return data[0]
+            data.access_count += 1
+            return data.value
 
 
     def setEntry(self, ob, key, value):
@@ -190,9 +207,7 @@ class Storage(object):
             if ob not in self._data:
                 self._data[ob] = {}
 
-            timestamp = time()
-            # [data, ctime, access count]
-            self._data[ob][key] = [value, timestamp, 0]
+            self._data[ob][key] = _StorageData(value)
 
     def _do_invalidate(self, ob, key=None):
         """This does the actual invalidation, but does not handle the locking.
@@ -259,7 +274,7 @@ class Storage(object):
                 data = self._data
                 for path, path_data in tuple(iteritems(data)): # copy, we modify
                     for key, val in tuple(iteritems(path_data)): # likewise
-                        if val[1] < punchline:
+                        if val.ctime < punchline:
                             del path_data[key]
                             if not path_data:
                                 del data[path]
@@ -278,16 +293,16 @@ class Storage(object):
             if len(keys) > self.maxEntries:
                 def getKey(item):
                     ob, key = item
-                    return data[ob][key][2]
+                    return data[ob][key].access_count
                 keys.sort(key=getKey)
 
                 ob, key = keys[self.maxEntries]
-                maxDropCount = data[ob][key][2]
+                maxDropCount = data[ob][key].access_count
 
                 keys.reverse()
 
                 for ob, key in keys:
-                    if data[ob][key][2] <= maxDropCount:
+                    if data[ob][key].access_count <= maxDropCount:
                         del data[ob][key]
                         if not data[ob]:
                             del data[ob]
@@ -297,7 +312,7 @@ class Storage(object):
     def _clearAccessCounters(self):
         for path_data in itervalues(self._data):
             for val in itervalues(path_data):
-                val[2] = 0
+                val.access_count = 0
         self._misses = {}
 
     def getKeys(self, object):
@@ -316,7 +331,7 @@ class Storage(object):
                 # a distinct value that can be recognized as such,
                 # but that also works in arithmetic.
                 size = False
-            hits = sum(entry[2] for entry in itervalues(path_data))
+            hits = sum(entry.access_count for entry in itervalues(path_data))
             result.append({'path': path,
                            'hits': hits,
                            'misses': self._misses.get(path, 0),
