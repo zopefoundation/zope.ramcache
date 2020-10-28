@@ -11,8 +11,8 @@
         :target: https://pypi.org/project/zope.ramcache/
         :alt: Supported Python versions
 
-.. image:: https://travis-ci.org/zopefoundation/zope.ramcache.svg?branch=master
-        :target: https://travis-ci.org/zopefoundation/zope.ramcache
+.. image:: https://travis-ci.com/zopefoundation/zope.ramcache.svg?branch=master
+        :target: https://travis-ci.com/zopefoundation/zope.ramcache
 
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.ramcache/badge.svg?branch=master
         :target: https://coveralls.io/github/zopefoundation/zope.ramcache?branch=master
