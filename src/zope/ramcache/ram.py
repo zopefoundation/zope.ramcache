@@ -132,6 +132,7 @@ class RAMCache(Persistent):
             return tuple(items)
         return ()
 
+
 class _StorageData(object):
     __slots__ = ('value', 'ctime', 'access_count')
 
@@ -149,6 +150,7 @@ class _StorageData(object):
     def __getstate__(self):
         # For getStatistics only.
         return self.value
+
 
 class Storage(object):
     """Storage keeps the count and does the aging and cleanup of cached
@@ -194,7 +196,6 @@ class Storage(object):
         else:
             data.access_count += 1
             return data.value
-
 
     def setEntry(self, ob, key, value):
         """Stores a value for the object.  Creates the necessary
@@ -272,8 +273,9 @@ class Storage(object):
 
             with self._invalidate_queued_after_writelock():
                 data = self._data
-                for path, path_data in tuple(iteritems(data)): # copy, we modify
-                    for key, val in tuple(iteritems(path_data)): # likewise
+                # creating copies as we modify:
+                for path, path_data in tuple(iteritems(data)):
+                    for key, val in tuple(iteritems(path_data)):
                         if val.ctime < punchline:
                             del path_data[key]
                             if not path_data:

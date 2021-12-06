@@ -16,4 +16,4 @@
 try:
     from cPickle import dumps
 except ImportError:
-    from pickle import dumps
+    from pickle import dumps  # noqa: F401 import unused

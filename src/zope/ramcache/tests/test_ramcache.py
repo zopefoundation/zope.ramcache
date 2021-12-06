@@ -27,12 +27,14 @@ from zope.ramcache.tests.test_icache import BaseICacheTest
 from zope.ramcache.interfaces import ICache
 from zope.ramcache.interfaces.ram import IRAMCache
 
+
 def _data(value, ctime, access_count):
     from zope.ramcache.ram import _StorageData
     data = _StorageData(value)
     data.ctime = ctime
     data.access_count = access_count
     return data
+
 
 class TestRAMCache(CleanUp,
                    BaseICacheTest,
@@ -400,8 +402,9 @@ class TestStorage(unittest.TestCase):
         s._data = {object:  {key: _data(value, timestamp-101, 2)},
                    object2: {key: _data(value, timestamp-90, 0)}}
         s.removeStaleEntries()
-        self.assertEqual(s._data, {object2: {key: _data(value, timestamp-90, 0)}},
-                         'stale records removed incorrectly')
+        self.assertEqual(
+            s._data, {object2: {key: _data(value, timestamp-90, 0)}},
+            'stale records removed incorrectly')
 
         s = Storage(maxAge=0)
         s._data = {object:  {key: _data(value, timestamp, 2)},
