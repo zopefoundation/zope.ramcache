@@ -16,8 +16,8 @@
 __docformat__ = 'restructuredtext'
 
 from contextlib import contextmanager
-from time import time
 from threading import Lock
+from time import time
 
 from six import iteritems
 from six import itervalues
@@ -26,8 +26,9 @@ from persistent import Persistent
 from zope.interface import implementer
 from zope.location.interfaces import IContained
 
-from zope.ramcache.interfaces.ram import IRAMCache
 from zope.ramcache._compat import dumps
+from zope.ramcache.interfaces.ram import IRAMCache
+
 
 # A global caches dictionary shared between threads
 caches = {}

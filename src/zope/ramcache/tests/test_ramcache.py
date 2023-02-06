@@ -16,16 +16,16 @@
 import unittest
 from time import time
 
-
-from zope.interface.verify import verifyClass, verifyObject
+from zope.interface.verify import verifyClass
+from zope.interface.verify import verifyObject
 from zope.testing.cleanup import CleanUp
 
 from zope.ramcache._compat import dumps
+from zope.ramcache.interfaces import ICache
+from zope.ramcache.interfaces.ram import IRAMCache
 from zope.ramcache.ram import RAMCache
 from zope.ramcache.ram import Storage
 from zope.ramcache.tests.test_icache import BaseICacheTest
-from zope.ramcache.interfaces import ICache
-from zope.ramcache.interfaces.ram import IRAMCache
 
 
 def _data(value, ctime, access_count):
