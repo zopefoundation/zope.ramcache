@@ -14,6 +14,7 @@
 """Unit tests for ICache interface
 """
 import unittest
+
 from zope.interface.verify import verifyObject
 
 from zope.ramcache.interfaces import ICache
