@@ -32,7 +32,7 @@ TESTS_REQUIRE = [
 setup(name='zope.ramcache',
       version='3.0.dev0',
       author='Zope Foundation and Contributors',
-      author_email='zope-dev@zope.org',
+      author_email='zope-dev@zope.dev',
       description='Zope RAM Cache',
       long_description=(
           read('README.rst')
@@ -63,6 +63,7 @@ setup(name='zope.ramcache',
       packages=find_packages('src'),
       package_dir={'': 'src'},
       namespace_packages=['zope'],
+      python_requires='>=3.7',
       install_requires=[
           'persistent',
           'setuptools',

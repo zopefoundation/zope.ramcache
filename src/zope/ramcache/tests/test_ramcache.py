@@ -14,13 +14,13 @@
 """Unit tests for RAM Cache.
 """
 import unittest
+from pickle import dumps
 from time import time
 
 from zope.interface.verify import verifyClass
 from zope.interface.verify import verifyObject
 from zope.testing.cleanup import CleanUp
 
-from zope.ramcache._compat import dumps
 from zope.ramcache.interfaces import ICache
 from zope.ramcache.interfaces.ram import IRAMCache
 from zope.ramcache.ram import RAMCache
@@ -64,7 +64,7 @@ class TestRAMCache(CleanUp,
 
     def test_getStatistics_non_pickle(self):
         # https://github.com/zopefoundation/zope.ramcache/issues/1
-        class NoPickle(object):
+        class NoPickle:
             def __getstate__(self):
                 raise RuntimeError()
 

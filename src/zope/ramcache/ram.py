@@ -16,17 +16,14 @@
 __docformat__ = 'restructuredtext'
 
 from contextlib import contextmanager
+from pickle import dumps
 from threading import Lock
 from time import time
-
-from six import iteritems
-from six import itervalues
 
 from persistent import Persistent
 from zope.interface import implementer
 from zope.location.interfaces import IContained
 
-from zope.ramcache._compat import dumps
 from zope.ramcache.interfaces.ram import IRAMCache
 
 
@@ -134,7 +131,7 @@ class RAMCache(Persistent):
         return ()
 
 
-class _StorageData(object):
+class _StorageData:
     __slots__ = ('value', 'ctime', 'access_count')
 
     def __init__(self, value):
@@ -153,7 +150,7 @@ class _StorageData(object):
         return self.value
 
 
-class Storage(object):
+class Storage:
     """Storage keeps the count and does the aging and cleanup of cached
     entries.
 
@@ -275,8 +272,8 @@ class Storage(object):
             with self._invalidate_queued_after_writelock():
                 data = self._data
                 # creating copies as we modify:
-                for path, path_data in tuple(iteritems(data)):
-                    for key, val in tuple(iteritems(path_data)):
+                for path, path_data in tuple(data.items()):
+                    for key, val in tuple(path_data.items()):
                         if val.ctime < punchline:
                             del path_data[key]
                             if not path_data:
@@ -291,7 +288,7 @@ class Storage(object):
     def removeLeastAccessed(self):
         with self._invalidate_queued_after_writelock():
             data = self._data
-            keys = [(ob, k) for ob, v in iteritems(data) for k in v]
+            keys = [(ob, k) for ob, v in data.items() for k in v]
 
             if len(keys) > self.maxEntries:
                 def getKey(item):
@@ -313,8 +310,8 @@ class Storage(object):
                 self._clearAccessCounters()
 
     def _clearAccessCounters(self):
-        for path_data in itervalues(self._data):
-            for val in itervalues(path_data):
+        for path_data in self._data.values():
+            for val in path_data.values():
                 val.access_count = 0
         self._misses = {}
 
@@ -322,7 +319,7 @@ class Storage(object):
         return self._data[object].keys()
 
     def getStatistics(self):
-        objects = sorted(iteritems(self._data))
+        objects = sorted(self._data.items())
         result = []
 
         for path, path_data in objects:
@@ -334,7 +331,7 @@ class Storage(object):
                 # a distinct value that can be recognized as such,
                 # but that also works in arithmetic.
                 size = False
-            hits = sum(entry.access_count for entry in itervalues(path_data))
+            hits = sum(entry.access_count for entry in path_data.values())
             result.append({'path': path,
                            'hits': hits,
                            'misses': self._misses.get(path, 0),
