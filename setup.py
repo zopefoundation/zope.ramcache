@@ -70,7 +70,6 @@ setup(name='zope.ramcache',
           'zope.interface',
           'zope.location',
       ],
-      tests_require=TESTS_REQUIRE,
       extras_require={
           'test': TESTS_REQUIRE,
       },
