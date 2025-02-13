@@ -95,7 +95,7 @@ class TestRAMCache(CleanUp,
         sleep(2)
         c.set(42, "object", key={'foo': 'bar'})
         # last cleanup should now be updated
-        self.assertTrue(lastCleanup < c._getStorage().lastCleanup)
+        self.assertLess(lastCleanup, c._getStorage().lastCleanup)
 
     def test_cache(self):
         from zope.ramcache import ram
@@ -283,8 +283,8 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         value = 'yes'
         ts = time()
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
         s._misses[object] = 42
         s._do_invalidate(object)
@@ -292,12 +292,12 @@ class TestStorage(unittest.TestCase):
                          'invalidation failed')
         self.assertEqual(s._misses[object], 0, "misses counter not cleared")
 
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
         s._do_invalidate(object, key2)
         self.assertEqual(s._data,
-                         {object:  {key: _data(value, ts, 0)},
+                         {object: {key: _data(value, ts, 0)},
                           object2: {key: _data(value, ts, 0)}},
                          'invalidation of one key failed')
 
@@ -309,8 +309,8 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         value = 'yes'
         ts = time()
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
 
         s.writelock.acquire()
@@ -321,8 +321,8 @@ class TestStorage(unittest.TestCase):
         self.assertEqual(s._invalidate_queue, [(object, None)],
                          "nothing in the invalidation queue")
 
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
         s.invalidate(object)
         self.assertEqual(s._data, {object2: {key: _data(value, ts, 0)}},
@@ -358,8 +358,8 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         value = 'yes'
         ts = time()
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
         s._invalidate_queue = [(object, None)]
         s._misses = {object: 10, object2: 100}
@@ -385,8 +385,8 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         value = 'yes'
         ts = time()
-        s._data = {object:  {key: _data(value, ts, 0),
-                             key2: _data(value, ts, 0)},
+        s._data = {object: {key: _data(value, ts, 0),
+                            key2: _data(value, ts, 0)},
                    object2: {key: _data(value, ts, 0)}}
         keys = sorted(s.getKeys(object))
         expected = sorted([key, key2])
@@ -399,16 +399,16 @@ class TestStorage(unittest.TestCase):
         key = ('view', (), ('answer', 42))
         value = 'yes'
         timestamp = time()
-        s._data = {object:  {key: _data(value, timestamp-101, 2)},
-                   object2: {key: _data(value, timestamp-90, 0)}}
+        s._data = {object: {key: _data(value, timestamp - 101, 2)},
+                   object2: {key: _data(value, timestamp - 90, 0)}}
         s.removeStaleEntries()
         self.assertEqual(
-            s._data, {object2: {key: _data(value, timestamp-90, 0)}},
+            s._data, {object2: {key: _data(value, timestamp - 90, 0)}},
             'stale records removed incorrectly')
 
         s = Storage(maxAge=0)
-        s._data = {object:  {key: _data(value, timestamp, 2)},
-                   object2: {key: _data(value, timestamp-90, 0)}}
+        s._data = {object: {key: _data(value, timestamp, 2)},
+                   object2: {key: _data(value, timestamp - 90, 0)}}
         d = s._data.copy()
         s.removeStaleEntries()
         self.assertEqual(s._data, d, 'records removed when maxAge == 0')
@@ -427,22 +427,22 @@ class TestStorage(unittest.TestCase):
         key3 = ('view3', (), ('answer', 42))
         value = 'yes'
         timestamp = time()
-        s._data = {object:  {key1: _data(value, 1, 10),
-                             key2: _data(value, 6, 5),
-                             key3: _data(value, 2, 2)},
+        s._data = {object: {key1: _data(value, 1, 10),
+                            key2: _data(value, 6, 5),
+                            key3: _data(value, 2, 2)},
                    object2: {key1: _data(value, 5, 2),
                              key2: _data(value, 3, 1),
                              key3: _data(value, 4, 1)}}
         s.removeLeastAccessed()
         self.assertEqual(s._data,
-                         {object:  {key1: _data(value, 1, 0),
-                                    key2: _data(value, 6, 0)}},
+                         {object: {key1: _data(value, 1, 0),
+                                   key2: _data(value, 6, 0)}},
                          'least records removed incorrectly')
 
         s = Storage(maxEntries=6)
-        s._data = {object:  {key1: _data(value, timestamp, 10),
-                             key2: _data(value, timestamp, 5),
-                             key3: _data(value, timestamp, 2)},
+        s._data = {object: {key1: _data(value, timestamp, 10),
+                            key2: _data(value, timestamp, 5),
+                            key3: _data(value, timestamp, 2)},
                    object2: {key1: _data(value, timestamp, 2),
                              key2: _data(value, timestamp, 1),
                              key3: _data(value, timestamp, 1)}}
@@ -458,17 +458,17 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         key3 = ('view3', (), ('answer', 42))
         value = 'yes'
-        s._data = {object:  {key1: _data(value, 1, 10),
-                             key2: _data(value, 2, 5),
-                             key3: _data(value, 3, 2)},
+        s._data = {object: {key1: _data(value, 1, 10),
+                            key2: _data(value, 2, 5),
+                            key3: _data(value, 3, 2)},
                    object2: {key1: _data(value, 4, 2),
                              key2: _data(value, 5, 1),
                              key3: _data(value, 6, 1)}}
         s._misses = {object: 4, object2: 2}
 
-        cleared = {object:  {key1: _data(value, 1, 0),
-                             key2: _data(value, 2, 0),
-                             key3: _data(value, 3, 0)},
+        cleared = {object: {key1: _data(value, 1, 0),
+                            key2: _data(value, 2, 0),
+                            key3: _data(value, 3, 0)},
                    object2: {key1: _data(value, 4, 0),
                              key2: _data(value, 5, 0),
                              key3: _data(value, 6, 0)}}
@@ -486,9 +486,9 @@ class TestStorage(unittest.TestCase):
         key2 = ('view2', (), ('answer', 42))
         key3 = ('view3', (), ('answer', 42))
         value = 'yes'
-        s._data = {object:  {key1: _data(value, 1, 10),
-                             key2: _data(value, 2, 5),
-                             key3: _data(value, 3, 2)},
+        s._data = {object: {key1: _data(value, 1, 10),
+                            key2: _data(value, 2, 5),
+                            key3: _data(value, 3, 2)},
                    object2: {key1: _data(value, 4, 2),
                              key2: _data(value, 5, 1),
                              key3: _data(value, 6, 1)}}
