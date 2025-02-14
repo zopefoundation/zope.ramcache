@@ -30,7 +30,7 @@ TESTS_REQUIRE = [
 ]
 
 setup(name='zope.ramcache',
-      version='3.1.dev0',
+      version='3.1',
       author='Zope Foundation and Contributors',
       author_email='zope-dev@zope.dev',
       description='Zope RAM Cache',
