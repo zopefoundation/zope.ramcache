@@ -15,7 +15,6 @@
 """
 import os
 
-from setuptools import find_packages
 from setuptools import setup
 
 
@@ -26,7 +25,7 @@ def read(*rnames):
 
 TESTS_REQUIRE = [
     'zope.testing',
-    'zope.testrunner',
+    'zope.testrunner >= 6.4',
 ]
 
 setup(name='zope.ramcache',
@@ -60,9 +59,6 @@ setup(name='zope.ramcache',
       ],
       url='https://github.com/zopefoundation/zope.ramcache',
       license='ZPL-2.1',
-      packages=find_packages('src'),
-      package_dir={'': 'src'},
-      namespace_packages=['zope'],
       python_requires='>=3.9',
       install_requires=[
           'persistent',
